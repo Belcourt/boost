@@ -25,11 +25,12 @@
 
 #include <boost/config/warning_disable.hpp>
 
-#include "boost/config.hpp"
-#include "boost/filesystem/operations.hpp"
-#include "boost/filesystem/convenience.hpp"
-#include "boost/filesystem/fstream.hpp"
+#include <boost/config.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/convenience.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include "detail/tiny_xml.hpp"
+#include "detail/common.hpp"
 namespace fs = boost::filesystem;
 namespace xml = boost::tiny_xml;
 
@@ -54,6 +55,8 @@ namespace xml = boost::tiny_xml;
 # define POPEN popen
 # define PCLOSE pclose
 #endif
+
+#include <boost/detail/lightweight_main.hpp>
 
 using std::string;
 
@@ -110,33 +113,6 @@ namespace
   string url_prefix_dir_view( svn_root );
   string url_prefix_checkout_view( svn_root );
   string url_suffix_text_view( "" );
-
-//  get revision number (as a string) if boost_root is svn working copy  -----//
-
-  string revision( const fs::path & boost_root )
-  {
-    string rev;
-    string command("cd ");
-    command += boost_root.string() + " & svn info";
-    FILE* fp = POPEN(command.c_str(), "r");
-    if (fp)
-    {
-      static const int line_max = 128;
-      char line[line_max];
-      while (fgets(line, line_max, fp) != NULL)
-      {
-        string ln(line);
-        if (ln.find("Revision: ") != string::npos)
-        {
-          for(auto itr = ln.begin()+10; itr != ln.end() && isdigit(*itr); ++itr)
-            rev += *itr;
-        }
-      }
-    }
-    std::cout << "Revision: " << rev << std::endl;
-    return rev;
-  }
-
 
 //  build notes_bookmarks from notes HTML  -----------------------------------//
 
@@ -308,7 +284,7 @@ namespace
         // This patch ignores the SunCC internal directory. Jens Maurer
         if ( itr->path().filename() == "SunWS_cache" ) continue;
         // SGI does something similar for template instantiations. Jens Maurer
-        if(  itr->path().filename() == "ii_files" ) continue; 
+        if(  itr->path().filename() == "ii_files" ) continue;
 
         if ( child.empty() ) child = *itr;
         else
@@ -347,6 +323,8 @@ namespace
     for ( itr = root.elements.begin();
           itr != root.elements.end() && (*itr)->name != name;
           ++itr ) {}
+    if (itr == root.elements.end())
+      std::cout << "did not find element " << name << std::endl;
     return itr != root.elements.end() ? *((*itr).get()) : empty_element;
   }
 
@@ -360,6 +338,8 @@ const string & attribute_value( const xml::element & element,
   for ( atr = element.attributes.begin();
         atr != element.attributes.end() && atr->name != attribute_name;
         ++atr ) {}
+  if (atr == element.attributes.end())
+    std::cout << "did not find attribute " << attribute_name << std::endl;
   return atr == element.attributes.end() ? empty_string : atr->value;
 }
 
@@ -367,7 +347,7 @@ const string & attribute_value( const xml::element & element,
 
 // Takes a relative path from boost root to a Jamfile.
 // Returns the directory where the build targets from
-// that Jamfile are located. If not found, emits a warning 
+// that Jamfile are located. If not found, emits a warning
 // and returns empty path.
 const fs::path find_bin_path(const string& relative)
 {
@@ -384,9 +364,9 @@ const fs::path find_bin_path(const string& relative)
     }
     if (!fs::exists(bin_path))
     {
-      std::cerr << "warning: could not find build results for '" 
+      std::cerr << "warning: could not find build results for '"
                 << relative << "'.\n";
-      std::cerr << "warning: tried directory " 
+      std::cerr << "warning: tried directory "
                 << bin_path.string() << "\n";
       bin_path = "";
     }
@@ -409,7 +389,7 @@ const fs::path find_bin_path(const string& relative)
     }
     if (!fs::exists(bin_path))
     {
-      std::cerr << "warning: could not find build results for '" 
+      std::cerr << "warning: could not find build results for '"
                 << relative << "'.\n";
       bin_path = "";
     }
@@ -555,9 +535,9 @@ const fs::path find_bin_path(const string& relative)
   {
     string sep;
     string target( "<sup>" );
-    add_notes( toolset + "/" + library + "/" + test, fail, sep, target ); 
-    add_notes( "*/" + library + "/" + test, fail, sep, target ); 
-    add_notes( toolset + "/" + library + "/*", fail, sep, target ); 
+    add_notes( toolset + "/" + library + "/" + test, fail, sep, target );
+    add_notes( "*/" + library + "/" + test, fail, sep, target );
+    add_notes( toolset + "/" + library + "/*", fail, sep, target );
     add_notes( "*/" + library + "/*", fail, sep, target );
     if ( target == "<sup>" ) target.clear();
     else target += "</sup>";
@@ -619,6 +599,8 @@ const fs::path find_bin_path(const string& relative)
     pass = !test_type_element.name.empty()
       && attribute_value( test_type_element, "result" ) != "fail";
 
+    std::string revision = attribute_value(db, "revision");
+
     if ( !no_links )
     {
       note = attribute_value( test_type_element, "result" ) == "note";
@@ -651,8 +633,15 @@ const fs::path find_bin_path(const string& relative)
     }
     else  target += pass ? pass_msg : fail_msg;
 
+    if (!revision.empty())
+    {
+      target += "<br><font size=\"2\">";
+      target += revision;
+      target += "</font>";
+    }
+
     // if notes, generate the superscript HTML
-    if ( !notes.empty() ) 
+    if ( !notes.empty() )
       target += get_notes( toolset, lib_name, test_name, !pass );
 
     // generate compile-time if requested
@@ -670,7 +659,7 @@ const fs::path find_bin_path(const string& relative)
         }
       }
     }
-      
+
     // generate run-time if requested
     if ( run_time )
     {
@@ -688,7 +677,7 @@ const fs::path find_bin_path(const string& relative)
     }
 
     if ( !pass ) ++error_count[compiler];
-      
+
     target += "</td>";
     return (anything_generated != 0) || !pass;
   }
@@ -762,7 +751,7 @@ const fs::path find_bin_path(const string& relative)
       if ( fs::is_directory( *itr )
         && itr->path().string().find( ".test" ) == (itr->path().string().size()-5) )
       {
-        results.push_back( std::string() ); 
+        results.push_back( std::string() );
         do_row( *itr,
                 itr->path().filename().string().substr( 0,
                   itr->path().filename().string().size()-5 ),
@@ -828,7 +817,7 @@ const fs::path find_bin_path(const string& relative)
           sub_pos = line.find_first_not_of( " \t./", sub_pos+13 );
         else
           sub_pos = line.find_first_not_of( " \t./", sub_pos+10 );
-      
+
         if ( sub_pos == string::npos ) continue;
         string subinclude_bin_dir(
           line.substr( sub_pos, line.find_first_of( " \t", sub_pos )-sub_pos ) );
@@ -877,7 +866,7 @@ const fs::path find_bin_path(const string& relative)
   {
     // Find test result locations, trying:
     // - Boost.Build V1 location with ALL_LOCATE_TARGET
-    // - Boost.Build V2 location with top-lelve "build-dir" 
+    // - Boost.Build V2 location with top-level "build-dir"
     // - Boost.Build V1 location without ALL_LOCATE_TARGET
     string relative( fs::initial_path().string() );
 
@@ -902,7 +891,7 @@ const fs::path find_bin_path(const string& relative)
     {
       fs::recursive_directory_iterator ritr( bin_path );
       fs::recursive_directory_iterator end_ritr;
-      while ( ritr != end_ritr 
+      while ( ritr != end_ritr
         && ((ritr->path().string().find( ".test" ) != (ritr->path().string().size()-5))
         || !fs::is_directory( *ritr )))
         ++ritr; // bypass chaff
@@ -914,7 +903,7 @@ const fs::path find_bin_path(const string& relative)
     else
     {
       fs::directory_iterator itr( bin_path );
-      while ( itr != end_itr 
+      while ( itr != end_itr
         && ((itr->path().string().find( ".test" ) != (itr->path().string().size()-5))
         || !fs::is_directory( *itr )))
         ++itr; // bypass chaff
@@ -949,11 +938,9 @@ const fs::path find_bin_path(const string& relative)
 
 //  main  --------------------------------------------------------------------//
 
-#define BOOST_NO_CPP_MAIN_SUCCESS_MESSAGE
-#include <boost/test/included/prg_exec_monitor.hpp>
-
 int cpp_main( int argc, char * argv[] ) // note name!
 {
+  fs::initial_path();
   fs::path comment_path;
   while ( argc > 1 && *argv[1] == '-' )
   {
@@ -983,8 +970,8 @@ int cpp_main( int argc, char * argv[] ) // note name!
   if ( argc != 3 && argc != 4 )
   {
     std::cerr <<
-      "Usage: compiler_status [options...] boost-root status-file [links-file]\n"
-      "  boost-root is the path to the boost tree root directory.\n"
+      "Usage: compiler_status [options...] boost-tree status-file [links-file]\n"
+      "  boost-tree is a path within a boost directory tree; may be a period.\n"
       "  status-file and links-file are paths to the output files.\n"
       "Must be run from directory containing Jamfile\n"
       "  options: --compiler name     Run for named compiler only\n"
@@ -1003,7 +990,7 @@ int cpp_main( int argc, char * argv[] ) // note name!
       "           --no-warn           Do not report warnings.\n"
       "           --compile-time      Show compile time.\n"
       "           --run-time          Show run time.\n"
-      "Example: compiler_status --compiler gcc /boost-root cs.html cs-links.html\n"
+      "Example: compiler_status --compiler gcc . cs.html cs-links.html\n"
       "Note: Only the leaf of the links-file path and --notes file string are\n"
       "used in status-file HTML links. Thus for browsing, status-file,\n"
       "links-file, and --notes file must all be in the same directory.\n"
@@ -1011,9 +998,27 @@ int cpp_main( int argc, char * argv[] ) // note name!
     return 1;
   }
 
-  boost_root = fs::path( argv[1] );
+  boost_root = boost::regression_tools::boost_root_path( fs::absolute( argv[1] ));
+#ifdef BOOST_WINDOWS_API
+  // normalize drive letter to lowercase so later string compares are case independent
+  std::string root_string = boost_root.string();
+  if (root_string.size() > 1 && root_string[1] == ':')
+  {
+    root_string[0] = std::tolower(root_string[0]);
+    boost_root = root_string;
+  }
+#endif
+  std::cout << "boost-root: " << boost_root << std::endl;
+
+  if ( boost_root.empty() )
+  {
+    std::cerr << "error: boost-root argument \"" << argv[1]
+              << "\" is not within a boost directory tree\n";
+    return 1;
+  }
+
   if ( locate_root.empty() ) locate_root = boost_root;
-  
+
   if (jamfile_path.empty())
     if (boost_build_v2)
       jamfile_path = "Jamfile.v2";
@@ -1055,7 +1060,7 @@ int cpp_main( int argc, char * argv[] ) // note name!
   std::strftime( run_date, sizeof(run_date),
     "%X UTC, %A %d %B %Y", std::gmtime( &tod ) );
 
-  std::string rev = revision( boost_root );
+//  std::string rev = revision( boost_root );
 
   report << "<html>\n"
           "<head>\n"
@@ -1070,10 +1075,10 @@ int cpp_main( int argc, char * argv[] ) // note name!
           "<h1>Boost Test Results - " + platform_desc() + "</h1>\n"
           "<b>Run</b> "
        << run_date;
-  if ( !rev.empty() ) report << ", <b>Revision</b> " << rev;
+  //if ( !rev.empty() ) report << ", <b>Revision</b> " << rev;
   report << "\n";
 
-  
+
   if ( compile_time )
     report << "<p>Times reported are elapsed wall clock time in seconds.</p>\n";
 
@@ -1108,7 +1113,7 @@ int cpp_main( int argc, char * argv[] ) // note name!
          "<h1>Boost Test Details - " + platform_desc() + "</h1>\n"
          "<b>Run Date:</b> "
       << run_date;
-    if ( !rev.empty() ) links_file << ", <b>Revision</b> " << rev;
+    //if ( !rev.empty() ) links_file << ", <b>Revision</b> " << rev;
     links_file << "\n</td>\n</table>\n<br>\n";
   }
 

@@ -454,3 +454,43 @@
 	path = libs/log
 	url = ../log.git
 	fetchRecurseSubmodules = on-demand
+[submodule "assert"]
+	path = libs/assert
+	url = ../assert.git
+	fetchRecurseSubmodules = on-demand
+[submodule "align"]
+	path = libs/align
+	url = ../align.git
+	fetchRecurseSubmodules = on-demand
+[submodule "type_index"]
+	path = libs/type_index
+	url = ../type_index.git
+	fetchRecurseSubmodules = on-demand
+[submodule "core"]
+	path = libs/core
+	url = ../core.git
+	fetchRecurseSubmodules = on-demand
+[submodule "throw_exception"]
+	path = libs/throw_exception
+	url = ../throw_exception.git
+	fetchRecurseSubmodules = on-demand
+[submodule "winapi"]
+	path = libs/winapi
+	url = ../winapi.git
+	fetchRecurseSubmodules = on-demand
+[submodule "boostdep"]
+	path = tools/boostdep
+	url = ../boostdep.git
+	fetchRecurseSubmodules = on-demand
+[submodule "lexical_cast"]
+	path = libs/lexical_cast
+	url = ../lexical_cast.git
+	fetchRecurseSubmodules = on-demand
+[submodule "convert"]
+	path = libs/convert
+	url = ../convert.git
+	branch = develop
+[submodule "endian"]
+	path = libs/endian
+	url = ../endian.git
+	fetchRecurseSubmodules = on-demand

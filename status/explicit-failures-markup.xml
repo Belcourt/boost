@@ -77,6 +77,12 @@
         <toolset name="acc"/>
         <note author="Boris Gubenko" refid="47"/>
       </mark-expected-failures>
+      <mark-expected-failures>
+        <test name="p_square_cumul_dist"/>
+        <test name="weighted_p_square_cumul_dist"/>
+        <toolset name="*"/>
+        <note author="Eric Niebler" refid="53"/>
+      </mark-expected-failures>
     </library>
 
     <!-- algorithm -->
@@ -640,8 +646,8 @@
         </mark-unusable>
     </library>
 
-    <!-- conversion -->
-    <library name="conversion">
+    <!-- lexical_cast -->
+    <library name="lexical_cast">
         <test name="lexical_cast_test">
             <mark-failure>
                 <toolset name="sunpro-5_3-sunos"/>
@@ -1450,13 +1456,18 @@
             <toolset name="gcc-4.5*"/>
             <toolset name="gcc-4.6*"/>
             <toolset name="gcc-4.7*"/>
+            <toolset name="gcc-4.8*"/>
+            <toolset name="gcc-4.9*"/>
             <toolset name="gcc-mingw-*"/>
             <toolset name="darwin-4.2*"/>
             <toolset name="darwin-4.3*"/>
             <toolset name="darwin-4.4*"/>
+            <toolset name="clang-darwin-4.2.1"/>
+            <toolset name="clang-darwin-asan"/>
+            <toolset name="clang-darwin-tot"/>
             <toolset name="clang-darwin-trunk"/>
             <toolset name="clang-darwin-normal"/>
-            <toolset name="clang-darwin-linux-2.9"/>
+            <toolset name="clang-linux-*"/>
             <toolset name="intel-linux-*"/>
             <toolset name="intel-darwin-*"/>
             <note author="Daniel James">
@@ -2125,6 +2136,7 @@
 			<toolset name="msvc-9.0*"/>
 			<toolset name="msvc-10.0*"/>
 			<toolset name="msvc-11.0*"/>
+			<toolset name="msvc-12.0*"/>
 			<note author="Joachim Faulhaber">
 				Compiler error expected for msvc: A minimal example of a class template 'value' that
 				results in syntax error in a subsequent meta function.
@@ -2572,14 +2584,6 @@
 	<!-- log -->
 	<library name="log">
 		<mark-unusable>
-			<toolset name="darwin-4.2*"/>
-			<toolset name="gcc-4.2*"/>
-			<note author="Andrey Semashev" date="02 May 2013">
-				These compilers don't support TR1 result_of correctly, which makes them fail
-				to compile Boost.Phoenix-related code of the library.
-			</note>
-		</mark-unusable>
-		<mark-unusable>
 			<toolset name="vacpp-12.1*"/>
 			<note author="Andrey Semashev" date="02 May 2013">
 				The compiler fails to compile Boost.Move and Boost.PropertyTree, which are used by this library.
@@ -2998,6 +3002,8 @@ for more information.
             <toolset name="gcc-4.3*"/>
             <toolset name="gcc-4.4*"/>
             <toolset name="gcc-4.5*"/>
+            <toolset name="qcc-4.4.2_arm"/>
+            <toolset name="qcc-4.4.2_x86"/>
                 <note author="Fernando Cacciola" id="optional-compiler-bug">
                 <p>This failure is caused by a compiler bug, and as far as we can 
                 tell, can't be worked around in the library, although we think 
@@ -5658,6 +5664,48 @@ This platform doesn't supports Boost.Container.
       </mark-expected-failures>
     </library>
 
+    <!-- type_index -->
+    <library name="type_index">
+      <mark-expected-failures>
+        <test name="testing_crossmodule_anonymous"/>
+        <toolset name="clang-*"/>
+        <toolset name="darwin-*"/>
+        <toolset name="gcc-3.*"/>
+        <toolset name="gcc-4.0*"/>
+        <toolset name="gcc-4.1*"/>
+        <toolset name="gcc-4.2*"/>
+        <toolset name="gcc-4.3*"/>
+        <toolset name="gcc-4.4*"/>
+        <toolset name="gcc-4.5*"/>
+        <toolset name="gcc-mingw-3.*"/>
+        <toolset name="gcc-mingw-4.0*"/>
+        <toolset name="gcc-mingw-4.1*"/>
+        <toolset name="gcc-mingw-4.2*"/>
+        <toolset name="gcc-mingw-4.3*"/>
+        <toolset name="gcc-mingw-4.4*"/>
+        <toolset name="gcc-mingw-4.5*"/>
+        <toolset name="gcc-mingw-4.6*"/>
+        <toolset name="qcc-4.4*"/>
+        <note author="Antony Polukhin">
+          Classes with exactly the same names defined in different modules in anonymous namespaces collapse
+          for this compiler even with RTTI on. This is a known compiler limitation that already fixed
+          in newer versions or will be fixed soon.
+        </note>
+      </mark-expected-failures>
+      <mark-expected-failures>
+        <test name="testing_crossmodule_anonymous_no_rtti"/>
+        <toolset name="clang-*"/>
+        <toolset name="darwin-*"/>
+        <toolset name="intel-linux-*"/>
+        <toolset name="gcc-*"/>
+        <note author="Antony Polukhin">
+          Classes with exactly the same names defined in different modules in anonymous namespaces collapse
+          for this compiler with RTTI off. This is a known limitation of RTTI-off mode. Such behavior is
+          reflected in docs.
+        </note>
+      </mark-expected-failures>
+    </library>
+
     <!-- type_traits -->
     <library name="type_traits">
        <mark-expected-failures>
@@ -7159,6 +7207,10 @@ This platform doesn't supports Boost.Container.
     
     <note id="52">
         This test requires lambda function support.
+    </note>
+
+    <note id="53">
+        This test has not been updated to accomodate changes in Boost.Random.
     </note>
 
 </explicit-failures-markup>
